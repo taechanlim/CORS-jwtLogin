@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
+const {createToken} = require('./utils/jwt')
 const pool = require('./db').pool
 const app = express()
 
@@ -40,12 +41,9 @@ app.post('/api/user/join',async (req,res)=>{
                     ?,?,?,?,?,now(),'1',?,?
                 )`
     const prepare = [1,userid,userpw,name,nickname,phone,mobile]
-    const [result] = await pool.execute(sql,prepare) // 1. SQL:string , 2. prepare:array
-    // DB에다가 해당 SQL을 던져서 요청을보내고.
-    // DB가 그 해당 SQL을 실행을해서 결과물을 result라는 변수에 다가 준거에요.
-    
-    console.log(result)
 
+    try{
+    const [result] = await pool.execute(sql,prepare) 
     const response = {
         result:{
             row:result.affectedRows,
@@ -53,7 +51,6 @@ app.post('/api/user/join',async (req,res)=>{
         },
         errno:0,
     }
-
     res.setHeader('Set-cookie','name=ingoo; path=/; Domain=localhost;')
     res.cookie('name2','ingoo2',{
         path:'/',
@@ -62,9 +59,71 @@ app.post('/api/user/join',async (req,res)=>{
         domain:'localhost'
     })
     res.json(response) 
+
+    }catch(e){
+    console.log(e.message)
+    const response = {
+        result:{
+            row:0,
+            id:0
+        },
+        errno:1,
+    }
+    res.json(response)
+    }
+
 })
 
-app.listen(4001,()=>{
+app.post('/api/user/login',async (req,res)=>{
+    const {userid,userpw} = req.body
+
+    const sql = `SELECT userid,name,nickname,userlevel FROM user WHERE userid=? and userpw=?`
+    const prepare = [userid,userpw]
+
+    try{
+        const [result] = await pool.execute(sql,prepare)
+        
+        //id와pw가 일치한값이 존재한다면 배열안에 요소가 존재할것이고 없다면 배열안에 요소가없습니다.
+        if(result.length <= 0) throw new Error('회원이 아닙니다')
+
+        //token 을 만듭니다.
+        const jwt = createToken(result[0])
+        console.log(jwt)
+
+        res.cookie('token',jwt,{
+            path:'/',
+            httpOnly:true,
+            secure:true,
+            domain:'localhost'
+        })
+
+        const response = {
+            result,
+            errno:0,
+        }
+        res.json(response)
+
+    }catch(e){
+        const response = {
+            result:[],
+            errno:1,
+        }
+        res.json(response)
+    }
+})
+
+//토큰인증하는 라우터
+app.post('/api/auth',(req,res)=>{
+    const {token} = req.body
+    // ... token 인증코드 ...
+    if(token){
+        res.send('true')
+    }else{
+        res.send('false')
+    }
+})
+
+app.listen(4000,()=>{
     console.log(`server 시작`)
 })
 // 

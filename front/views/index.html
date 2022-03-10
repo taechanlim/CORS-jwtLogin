@@ -31,7 +31,7 @@
                 body:JSON.stringify(data)
             }
 
-            const response = await fetch('http://localhost:4001',option)
+            const response = await fetch('http://localhost:4000',option)
             const result = await response.text()
             console.log(result)
 
