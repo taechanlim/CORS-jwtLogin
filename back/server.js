@@ -3,7 +3,9 @@ const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const {createToken} = require('./utils/jwt')
 const pool = require('./db').pool
+const { Auth } = require('./middlewares/auth2')
 const app = express()
+
 
 app.use(express.json())
 app.use(express.urlencoded({extended:true,}))
@@ -12,6 +14,7 @@ app.use(cors({
     origin:true,
     credentials:true,
 })) // http://localhost:3001
+app.use(Auth)
 
 // res.setHeader('Access-Control-Allow-Origin','*')
 // res.setHeader('Access-Control-Allow-Methods','POST, GET, OPTIONS, DELETE') // methods 사용여부
@@ -19,7 +22,7 @@ app.use(cors({
 // res.setHeader('Access-Control-Allow-Headers','Content-type')
 
 app.post('/',(req,res)=>{
-    console.log(req.body)
+    // console.log(req.body)
     res.setHeader('Set-cookie','name=ingoo; Domain=localhost;')
     res.send('123123')
 })
@@ -123,7 +126,60 @@ app.post('/api/auth',(req,res)=>{
     }
 })
 
-app.listen(4000,()=>{
+app.post('/api/board/write',async (req,res)=>{
+    const {subject,content} = req.body
+    const {nickname} = req.user
+    const sql = `INSERT INTO board(subject,content,nickname) values(?,?,?)`
+    const prepare = [subject,content,nickname]
+    let response = {
+        result:[],
+        errno:0
+    }
+    try{
+        const [result] = await pool.execute(sql,prepare)
+        response = {
+            ...response,
+            result:{
+                affectedRows:result.affectedRows,
+                insertId:result.insertId
+            }
+        }
+    }catch(e){
+        console.log(e.message)
+        response={
+            errno:1
+        }
+    }
+
+    res.json(response)
+})
+
+app.post('/api/board/view/:idx',async (req,res)=>{
+    const {idx} = req.params
+    const sql = `SELECT * FROM board WHERE idx=?`
+    const prepare = [idx]
+    let response = {
+        errno:0
+    }
+    try{
+        const [result] = await pool.execute(sql,prepare)
+        response = {
+            ...response,
+            result
+        }
+    }catch(e){
+            {
+                console.log(e.message)
+                response={
+                    errno:1
+                }
+            }
+    }
+    res.json(response)
+})
+
+
+app.listen(4001,()=>{
     console.log(`server 시작`)
 })
 // 
