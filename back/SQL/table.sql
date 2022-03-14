@@ -22,3 +22,5 @@ CREATE TABLE board(
     hit INT DEFAULT 0 NOT NULL,
     PRIMARY KEY(idx)
 );
+
+

@@ -178,9 +178,31 @@ app.post('/api/board/view/:idx',async (req,res)=>{
     res.json(response)
 })
 
+app.post('/api/board/list', async (req,res)=>{
+    const sql = `SELECT idx,subject,nickname,DATE_FORMAT(date,'%Y-%m-%d') as date,hit FROM board ORDER BY idx DESC`
+    const sql2 = `SELECT count(idx) as total_record FROM board`
+
+    let response = {
+        errno:1
+    }
+
+    try{
+        const [result] = await pool.execute(sql)
+        const [[{total_record}]] = await pool.execute(sql2)
+        response = {
+            ...response,
+            total_record,
+            errno:0,
+            result
+        }
+        
+    }catch(e){
+        console.log(e.message)
+    }
+
+    res.json(response)
+})
 
 app.listen(4001,()=>{
     console.log(`server 시작`)
 })
-// 
-// /home/ingoo/workspace/220307/cors/back/SQL/table.sql
