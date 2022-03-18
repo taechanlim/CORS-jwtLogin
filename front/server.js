@@ -3,6 +3,7 @@ const nunjucks = require('nunjucks')
 const cookieParser = require('cookie-parser')
 const axios = require('axios')
 const app = express()
+const webSocket = require('./socket.js')
 
 const router = require('./routes/index')
 
@@ -40,6 +41,6 @@ app.use(router)
 
 
 
-app.listen(3001,()=>{
-    console.log(`server 시작`)
-})
+webSocket(app.listen(3001,()=>{
+    console.log('서버시작')
+}))
